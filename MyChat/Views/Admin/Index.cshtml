@@ -1,0 +1,70 @@
+@model IEnumerable<MyChat.Models.User>
+
+@{
+    ViewData["Title"]="Пользователи";
+}
+
+<h2>Пользователи</h2>
+<a asp-action="Create" class="btn btn-sm btn-success mb-2">Создать пользователя</a>
+
+<table class="table table-sm align-middle" id="usersTable">
+    <thead>
+    <tr><th>ID</th><th>Логин</th><th>Email</th><th>Статус</th><th></th></tr>
+    </thead>
+    <tbody>
+    @foreach (var u in Model)
+    {
+        <tr data-id="@u.Id">
+            <td>@u.Id</td>
+            <td>@u.UserName</td>
+            <td>@u.Email</td>
+            <td class="status text-muted">@(u.LockoutEnd.HasValue && u.LockoutEnd > DateTimeOffset.UtcNow ? "Заблокирован" : "Активен")</td>
+            <td class="text-end">
+                <a asp-action="Edit" asp-route-id="@u.Id" class="btn btn-sm btn-outline-primary">Редактировать</a>
+                <button type="button" class="btn btn-sm btn-outline-danger lock-btn">Заблокировать</button>
+                <button type="button" class="btn btn-sm btn-outline-success unlock-btn">Разблокировать</button>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.lock-btn').forEach(btn=>{
+            btn.addEventListener('click', async e=>{
+                const tr = e.target.closest('tr');
+                const id = tr.dataset.id;
+                const res = await fetch(`/Admin/Lock/${id}`, {
+                    method: 'POST',
+                    headers: {'X-Requested-With':'XMLHttpRequest'}
+                });
+                if (res.ok){
+                    const data = await res.json();
+                    if (data.success){
+                        tr.querySelector('.status').textContent = 'Заблокирован';
+                        tr.querySelector('.status').classList.add('text-danger');
+                    }
+                }
+            });
+        });
+
+        document.querySelectorAll('.unlock-btn').forEach(btn=>{
+            btn.addEventListener('click', async e=>{
+                const tr = e.target.closest('tr');
+                const id = tr.dataset.id;
+                const res = await fetch(`/Admin/Unlock/${id}`, {
+                    method: 'POST',
+                    headers: {'X-Requested-With':'XMLHttpRequest'}
+                });
+                if (res.ok){
+                    const data = await res.json();
+                    if (data.success){
+                        tr.querySelector('.status').textContent = 'Активен';
+                        tr.querySelector('.status').classList.remove('text-danger');
+                    }
+                }
+            });
+        });
+    </script>
+}

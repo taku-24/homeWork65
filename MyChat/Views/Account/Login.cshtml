@@ -1,0 +1,34 @@
+@model MyChat.ViewModels.LoginVm
+
+@{
+    ViewData["Title"]="Вход"; 
+}
+
+<h2>Вход</h2>
+
+<form asp-action="Login" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <label asp-for="UserNameOrEmail"></label>
+    <input asp-for="UserNameOrEmail" class="form-control"/>
+    <label asp-for="Password"></label>
+    <div class="input-group">
+        <input asp-for="Password" id="loginPwd" class="form-control"/>
+        <button type="button" id="toggleLoginPwd" class="btn btn-outline-secondary">👁</button>
+    </div>
+    
+    <div class="form-check mt-2">
+        <input asp-for="RememberMe" class="form-check-input"/>
+        <label asp-for="RememberMe" class="form-check-label"></label>
+    </div>
+    <button class="btn btn-primary mt-2">Войти</button>
+</form>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial"/>
+    <script>
+        document.getElementById('toggleLoginPwd').onclick = ()=>{
+            const p = document.getElementById('loginPwd');
+            p.type = p.type === 'password' ? 'text' : 'password';
+        }
+    </script>
+}

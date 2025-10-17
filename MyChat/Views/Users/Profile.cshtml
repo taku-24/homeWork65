@@ -1,0 +1,15 @@
+@model MyChat.Models.User
+@{
+    ViewData["Title"]="Профиль";
+}
+
+<div class="d-flex gap-3 align-items-center">
+    <img src="@Model.AvatarPath" style="width:80px;height:80px;border-radius:50%;object-fit:cover">
+    <div>
+        <h3>@Model.UserName</h3>
+        <div>Email: @Model.Email</div>
+        <div>Дата рождения: @Model.BirthDate.ToString("dd.MM.yyyy")</div>
+        <div>Сообщений отправлено: <b>@ViewBag.SentCount</b></div>
+        <a asp-action="EditProfile" class="btn btn-sm btn-secondary mt-2">Редактировать</a>
+    </div>
+</div>

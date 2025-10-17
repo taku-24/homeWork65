@@ -1,0 +1,15 @@
+@model MyChat.ViewModels.EditProfileVm
+@{ ViewData["Title"]="Редактирование профиля"; }
+<form asp-action="EditProfile" method="post" enctype="multipart/form-data">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <label asp-for="UserName"></label>
+    <input asp-for="UserName" class="form-control"/>
+    <label asp-for="Email"></label>
+    <input asp-for="Email" class="form-control"/>
+    <label asp-for="BirthDate"></label>
+    <input asp-for="BirthDate" class="form-control"/>
+    <label asp-for="Avatar"></label>
+    <input asp-for="Avatar" type="file" class="form-control"/>
+    <button class="btn btn-primary mt-2">Сохранить</button>
+</form>
+@section Scripts{ <partial name="_ValidationScriptsPartial"/> }

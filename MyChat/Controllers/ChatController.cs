@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Localization;
 using Microsoft.EntityFrameworkCore;
 using MyChat.Models;
 
@@ -11,10 +12,13 @@ public class ChatController : Controller
 {
     private readonly MyChatContext _context;
     private readonly UserManager<User> _userManager;
+    private readonly IViewLocalizer _localizer;
 
-    public ChatController(MyChatContext context, UserManager<User> userManager)
+    public ChatController(MyChatContext context, UserManager<User> userManager, IViewLocalizer localizer)
     {
-        _context = context; _userManager = userManager;
+        _context = context;
+        _userManager = userManager;
+        _localizer = localizer;
     }
     
     [HttpGet]
@@ -22,12 +26,12 @@ public class ChatController : Controller
     {
         var currentUser = await _userManager.GetUserAsync(User);
         ViewBag.MeId = currentUser!.Id;
-        var lastMessages = await _context.Messages
+        return View(await _context.Messages
             .Include(m => m.User)
-            .OrderByDescending(m => m.Id).Take(30)
+            .OrderByDescending(m => m.Id)
+            .Take(30)
             .OrderBy(m => m.Id)
-            .ToListAsync();
-        return View(lastMessages);
+            .ToListAsync());
     }
     
     [HttpPost]

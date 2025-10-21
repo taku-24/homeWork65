@@ -1,5 +1,8 @@
 ﻿@using Microsoft.AspNetCore.Identity
 @using MyChat.Services
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,42 +18,61 @@
 <header>
     <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
         <div class="container-fluid">
-            <a class="navbar-brand" asp-area="" asp-controller="Chat" asp-action="Index">MyChat</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                    aria-expanded="false" aria-label="Toggle navigation">
+            <a class="navbar-brand" asp-controller="Home" asp-action="Index">MyChat</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse"
+                    aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                 <ul class="navbar-nav flex-grow-1">
-                    <li class="nav-item"><a class="nav-link" asp-controller="Chat" asp-action="Index">Чат</a></li>
-                    <li class="nav-item"><a class="nav-link" asp-controller="Users" asp-action="Profile">Профиль</a></li>
-
+                    
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Chat" asp-action="Index">@Localizer["Chat"]</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Users" asp-action="Profile">@Localizer["Profile"]</a>
+                    </li>
+                    
                     @if (User.Identity!.IsAuthenticated)
                     {
                         <li class="nav-item">
                             <form asp-controller="Account" asp-action="Logout" method="post">
-                                <button class="btn btn-link nav-link">Выход</button>
+                                <button class="btn btn-link nav-link">@Localizer["Logout"]</button>
                             </form>
                         </li>
                     }
                     else
                     {
-                        <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Login">Вход</a></li>
-                        <li class="nav-item"><a class="nav-link" asp-controller="Account" asp-action="Register">Регистрация</a></li>
-                    }
-                    @if (User.IsInRole("admin"))
-                    {
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Admin" asp-action="Index">Панель администратора</a>
+                            <a class="nav-link" asp-controller="Account" asp-action="Login">@Localizer["Login"]</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Account" asp-action="Register">@Localizer["Register"]</a>
                         </li>
                     }
                     
+                    @if (User.IsInRole("admin"))
+                    {
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Admin" asp-action="Index">@Localizer["AdminPanel"]</a>
+                        </li>
+                    }
 
                 </ul>
+                
+                <div class="d-flex align-items-center">
+                    <a class="nav-link" asp-controller="@ViewContext.RouteData.Values["controller"]"
+                       asp-action="@ViewContext.RouteData.Values["action"]"
+                       asp-route-culture="en">EN</a> |
+                    <a class="nav-link" asp-controller="@ViewContext.RouteData.Values["controller"]"
+                       asp-action="@ViewContext.RouteData.Values["action"]"
+                       asp-route-culture="ru">RU</a>
+                </div>
             </div>
         </div>
     </nav>
 </header>
+
 <div class="container">
     <main role="main" class="pb-3">
         @RenderBody()

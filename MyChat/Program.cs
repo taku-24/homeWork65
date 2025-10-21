@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MyChat.Models;
 using MyChat.Services;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,15 +24,25 @@ builder.Services.AddIdentity<User, IdentityRole<int>>(opt =>
     .AddErrorDescriber<RuIdentityErrors>()
     .AddDefaultTokenProviders();
 
-builder.Services.AddControllersWithViews();
-
-builder.Services.Configure<RequestLocalizationOptions>(o =>
-{
-    o.SetDefaultCulture("ru-RU").AddSupportedCultures("ru-RU").AddSupportedUICultures("ru-RU");
-});
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+builder.Services.AddControllersWithViews()
+    .AddViewLocalization()
+    .AddDataAnnotationsLocalization();
 
 var app = builder.Build();
 
+var supportedCultures = new[]
+{
+    new CultureInfo("en"),
+    new CultureInfo("ru")
+};
+
+app.UseRequestLocalization(new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("ru"),
+    SupportedCultures = supportedCultures,
+    SupportedUICultures = supportedCultures
+});
 
 using (var scope = app.Services.CreateScope())
 {
@@ -44,7 +56,6 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseRequestLocalization();
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();

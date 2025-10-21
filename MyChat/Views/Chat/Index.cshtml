@@ -1,15 +1,21 @@
 @model IEnumerable<MyChat.Models.Message>
-@{ ViewData["Title"]="Чат"; var meId = (int)ViewBag.MeId; }
+@using Microsoft.AspNetCore.Mvc.Localization
+@inject IViewLocalizer Localizer
+
+@{
+    ViewData["Title"] = Localizer["Title"];
+    var meId = (int)ViewBag.MeId;
+}
 
 <style>
-    #chatBox{ height:420px; overflow-y:auto; border:1px solid #ccc; padding:10px; background:#fff; }
-    .msg{ display:flex; gap:10px; margin:6px 0; max-width:70%; }
-    .msg.mine{ margin-left:auto; justify-content:flex-end; }
-    .msg img{ width:32px; height:32px; border-radius:50%; object-fit:cover; }
-    .bubble{ padding:8px 10px; background:#f3f3f3; border-radius:10px; }
-    .msg.mine .bubble{ background:#d9f5d2; }
-    .username{ font-weight:bold; cursor:pointer; }
-    .small{ font-size:12px; color:#888; }
+    #chatBox { height: 420px; overflow-y: auto; border: 1px solid #ccc; padding: 10px; background: #fff; }
+    .msg { display: flex; gap: 10px; margin: 6px 0; max-width: 70%; }
+    .msg.mine { margin-left: auto; justify-content: flex-end; }
+    .msg img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+    .bubble { padding: 8px 10px; background: #f3f3f3; border-radius: 10px; }
+    .msg.mine .bubble { background: #d9f5d2; }
+    .username { font-weight: bold; cursor: pointer; }
+    .small { font-size: 12px; color: #888; }
 </style>
 
 <div id="chatBox">
@@ -36,63 +42,67 @@
 
 <form id="sendForm" class="mt-2">
     <div class="input-group">
-        <input id="msgInput" class="form-control" maxlength="150" placeholder="Введите ваше сообщение (до 150 символов)">
-        <button class="btn btn-primary" type="submit">Отправить</button>
+        <input id="msgInput" class="form-control" maxlength="150"
+               placeholder="@Localizer["Placeholder"]">
+        <button class="btn btn-primary" type="submit">@Localizer["Send"]</button>
     </div>
-    <div class="small text-muted"><span id="left">150</span> символов осталось</div>
+    <div class="small text-muted">
+        <span id="left">150</span> @Localizer["Left"]
+    </div>
 </form>
 
-@section Scripts{
+@section Scripts {
     <script>
         const box = document.getElementById('chatBox');
         const input = document.getElementById('msgInput');
         const left = document.getElementById('left');
 
-        function lastId()
-        {
-            const n = box.querySelector('.msg:last-of-type'); return n?parseInt(n.dataset.id):0; 
+        function lastId() {
+            const n = box.querySelector('.msg:last-of-type');
+            return n ? parseInt(n.dataset.id) : 0;
         }
 
-        function render(m){
+        function render(m) {
             const mine = m.userId === @meId;
             const div = document.createElement('div');
             div.className = 'msg' + (mine ? ' mine' : '');
             div.dataset.id = m.id;
-            div.innerHTML = (mine? '' : `<img src="${m.avatar||'/images/avatars/default.png'}">`) +
+            div.innerHTML = (mine ? '' : `<img src="${m.avatar || '/images/avatars/default.png'}">`) +
                 `<div>
-                <div class="username" data-id="${m.userId}">${m.userName}</div>
-                <div class="bubble"></div>
-                <div class="small">${m.sentAt}</div>
+                    <div class="username" data-id="${m.userId}">${m.userName}</div>
+                    <div class="bubble"></div>
+                    <div class="small">${m.sentAt}</div>
                  </div>` +
-                (mine? `<img src="${m.avatar||'/images/avatars/default.png'}">` : '');
+                (mine ? `<img src="${m.avatar || '/images/avatars/default.png'}">` : '');
             div.querySelector('.bubble').innerText = m.text;
             box.appendChild(div);
             box.scrollTop = box.scrollHeight;
         }
 
-        document.getElementById('sendForm').addEventListener('submit', async (e)=>{
+        document.getElementById('sendForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const text = (input.value||'').trim();
-            if (text.length===0 || text.length>150) return;
+            const text = (input.value || '').trim();
+            if (text.length === 0 || text.length > 150) return;
             const fd = new FormData(); fd.append('text', text);
-            const r = await fetch('@Url.Action("Send","Chat")', { method:'POST', body: fd });
-            if (r.ok){ render(await r.json()); input.value=''; left.textContent=150; }
-});
-
-        async function poll(){
-            try{
-                const r = await fetch('@Url.Action("Latest","Chat")?afterId=' + lastId());
-                if (r.ok){ const list = await r.json(); for (const m of list) render(m); }
-            }catch{}
-}
-        setInterval(poll, 5000);
-
-        box.addEventListener('click', e=>{
-            const u = e.target.closest('.username'); if(!u) return;
-            const id = u.getAttribute('data-id'); window.location.href = '@Url.Action("Profile","Users")?id=' + id;
+            const r = await fetch('@Url.Action("Send", "Chat")', { method: 'POST', body: fd });
+            if (r.ok) { render(await r.json()); input.value = ''; left.textContent = 150; }
         });
 
-        input.addEventListener('input', ()=> left.textContent = 150 - (input.value||'').length);
-        window.addEventListener('load', ()=> box.scrollTop = box.scrollHeight);
+        async function poll() {
+            try {
+                const r = await fetch('@Url.Action("Latest", "Chat")?afterId=' + lastId());
+                if (r.ok) { const list = await r.json(); for (const m of list) render(m); }
+            } catch { }
+        }
+        setInterval(poll, 5000);
+
+        box.addEventListener('click', e => {
+            const u = e.target.closest('.username'); if (!u) return;
+            const id = u.getAttribute('data-id');
+            window.location.href = '@Url.Action("Profile", "Users")?id=' + id;
+        });
+
+        input.addEventListener('input', () => left.textContent = 150 - (input.value || '').length);
+        window.addEventListener('load', () => box.scrollTop = box.scrollHeight);
     </script>
 }

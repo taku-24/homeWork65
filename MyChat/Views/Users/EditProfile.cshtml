@@ -1,15 +1,42 @@
 @model MyChat.ViewModels.EditProfileVm
-@{ ViewData["Title"]="Редактирование профиля"; }
+@{
+    ViewData["Title"] = "Редактирование профиля";
+}
+
 <form asp-action="EditProfile" method="post" enctype="multipart/form-data">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
     <label asp-for="UserName"></label>
     <input asp-for="UserName" class="form-control"/>
-    <label asp-for="Email"></label>
+
+    <label asp-for="Email" class="mt-2"></label>
     <input asp-for="Email" class="form-control"/>
-    <label asp-for="BirthDate"></label>
+
+    <label asp-for="BirthDate" class="mt-2"></label>
     <input asp-for="BirthDate" class="form-control"/>
-    <label asp-for="Avatar"></label>
+
+    <label asp-for="Avatar" class="mt-2"></label>
     <input asp-for="Avatar" type="file" class="form-control"/>
-    <button class="btn btn-primary mt-2">Сохранить</button>
+
+    <hr class="my-3" />
+
+    <h5>Смена пароля</h5>
+
+    <label asp-for="OldPassword" class="mt-2"></label>
+    <input asp-for="OldPassword" type="password" class="form-control"/>
+    <span asp-validation-for="OldPassword" class="text-danger"></span>
+
+    <label asp-for="NewPassword" class="mt-2"></label>
+    <input asp-for="NewPassword" type="password" class="form-control"/>
+    <span asp-validation-for="NewPassword" class="text-danger"></span>
+
+    <label asp-for="ConfirmPassword" class="mt-2"></label>
+    <input asp-for="ConfirmPassword" type="password" class="form-control"/>
+    <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+
+    <button class="btn btn-primary mt-3">Сохранить</button>
 </form>
-@section Scripts{ <partial name="_ValidationScriptsPartial"/> }
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial"/>
+}

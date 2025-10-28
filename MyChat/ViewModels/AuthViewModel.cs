@@ -41,16 +41,40 @@ public class LoginVm
     [Display(Name = "Запомнить меня")] public bool RememberMe { get; set; }
 }
 
-public class EditProfileVm
+
+public class EditProfileVm : IValidatableObject
 {
-    [Required, Display(Name = "Имя пользователя")]
-    public string UserName { get; set; } = "";
+    [Required]
+    public string UserName { get; set; } = null!;
 
-    [Required, EmailAddress, Display(Name = "Email")]
-    public string Email { get; set; } = "";
+    [Required, EmailAddress]
+    public string Email { get; set; } = null!;
 
-    [Required, DataType(DataType.Date), Display(Name = "Дата рождения")]
+    [Required, DataType(DataType.Date)]
     public DateTime BirthDate { get; set; }
 
-    [Display(Name = "Аватар")] public IFormFile? Avatar { get; set; }
+    public IFormFile? Avatar { get; set; }
+    
+    [DataType(DataType.Password)]
+    public string? OldPassword { get; set; }
+
+    [DataType(DataType.Password)]
+    public string? NewPassword { get; set; }
+
+    [DataType(DataType.Password)]
+    [Compare(nameof(NewPassword), ErrorMessage = "Пароли не совпадают")]
+    public string? ConfirmPassword { get; set; }
+
+    
+    public IEnumerable<ValidationResult> Validate(ValidationContext context)
+    {
+        if (!string.IsNullOrWhiteSpace(NewPassword))
+        {
+            if (string.IsNullOrWhiteSpace(OldPassword))
+                yield return new ValidationResult("Укажите текущий пароль", new[] { nameof(OldPassword) });
+
+            if (string.IsNullOrWhiteSpace(ConfirmPassword))
+                yield return new ValidationResult("Подтвердите новый пароль", new[] { nameof(ConfirmPassword) });
+        }
+    }
 }

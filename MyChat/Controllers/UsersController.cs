@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyChat.Models;
+using MyChat.Services;
 using MyChat.ViewModels;
 
 namespace MyChat.Controllers;
@@ -13,10 +14,11 @@ public class UsersController : Controller
     private readonly MyChatContext _context;
     private readonly UserManager<User> _userManager;
     private readonly IWebHostEnvironment _env;
+    private readonly EmailService _email;
 
-    public UsersController(MyChatContext context, UserManager<User> userManager, IWebHostEnvironment env)
+    public UsersController(MyChatContext context, UserManager<User> userManager, IWebHostEnvironment env, EmailService email)
     {
-        _context = context; _userManager = userManager; _env = env;
+        _context = context; _userManager = userManager; _env = env; _email = email;
     }
     
     [HttpGet]
@@ -55,30 +57,89 @@ public class UsersController : Controller
         if (currentUser == null) return RedirectToAction("Login", "Account");
         if (!ModelState.IsValid) return View(model);
 
+        bool passwordChanged = false;
+        
+        if (!string.IsNullOrWhiteSpace(model.NewPassword))
+        {
+            var passRes = await _userManager.ChangePasswordAsync(
+                currentUser,
+                model.OldPassword!,
+                model.NewPassword!
+            );
+
+            if (!passRes.Succeeded)
+            {
+                foreach (var e in passRes.Errors)
+                    ModelState.AddModelError("", e.Description);
+                return View(model);
+            }
+
+            passwordChanged = true;
+        }
+
         currentUser.UserName = model.UserName;
         currentUser.Email = model.Email;
         currentUser.BirthDate = model.BirthDate;
 
         if (model.Avatar != null && model.Avatar.Length > 0)
         {
-            var avatarsDir = Path.Combine(_env.WebRootPath, "images", "avatars");
-            Directory.CreateDirectory(avatarsDir);
+            var dir = Path.Combine(_env.WebRootPath, "images", "avatars");
+            Directory.CreateDirectory(dir);
 
             var fileName = Guid.NewGuid() + Path.GetExtension(model.Avatar.FileName);
-            var physicalPath = Path.Combine(avatarsDir, fileName);
+            var path = Path.Combine(dir, fileName);
 
-            using var stream = System.IO.File.Create(physicalPath);
-            await model.Avatar.CopyToAsync(stream);
+            using var fs = System.IO.File.Create(path);
+            await model.Avatar.CopyToAsync(fs);
 
             currentUser.AvatarPath = "/images/avatars/" + fileName;
         }
 
-        var updateResult = await _userManager.UpdateAsync(currentUser);
-        if (!updateResult.Succeeded)
-            foreach (var error in updateResult.Errors)
-                ModelState.AddModelError("", error.Description);
+        var updateRes = await _userManager.UpdateAsync(currentUser);
+        if (!updateRes.Succeeded)
+        {
+            foreach (var err in updateRes.Errors)
+                ModelState.AddModelError("", err.Description);
+            return View(model);
+        }
+        
+        if (passwordChanged)
+        {
+            var message = $"""
+            <h3>Ваш пароль был успешно изменён</h3>
+            """;
 
-        if (!ModelState.IsValid) return View(model);
+            await _email.SendAsync(currentUser.Email!, "Пароль изменён", message);
+            TempData["Ok"] = "Пароль изменён и письмо отправлено";
+        }
+        else
+        {
+            TempData["Ok"] = "Профиль обновлён";
+        }
+
         return RedirectToAction(nameof(Profile));
     }
+
+
+    [HttpPost]
+    public async Task<IActionResult> SendMyData()
+    {
+        var u = await _userManager.GetUserAsync(User);
+        if (u == null) return Unauthorized();
+
+        int msgCount = await _context.Messages.CountAsync(m => m.UserId == u.Id);
+
+        var emailService = HttpContext.RequestServices.GetRequiredService<EmailService>();
+        await emailService.SendAsync(
+            u.Email!,
+            "Ваши данные MyChat",
+            $"Профиль: {u.UserName}<br/>" +
+            $"Email: {u.Email}<br/>" +
+            $"Сообщений отправлено: {msgCount}"
+        );
+
+        TempData["Ok"] = "Данные отправлены на почту";
+        return RedirectToAction(nameof(Profile));
+    }
+
 }

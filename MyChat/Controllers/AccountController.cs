@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using MyChat.Models;
+using MyChat.Services;
 using MyChat.ViewModels;
 
 namespace MyChat.Controllers;
@@ -10,12 +11,15 @@ public class AccountController : Controller
     private readonly UserManager<User> _users;
     private readonly SignInManager<User> _signIn;
     private readonly IWebHostEnvironment _env;
-
-    public AccountController(UserManager<User> users, SignInManager<User> signIn, IWebHostEnvironment env)
+    private readonly EmailService _email;
+    
+    public AccountController(UserManager<User> users, SignInManager<User> signIn, IWebHostEnvironment env, EmailService email)
     {
-        _users = users; _signIn = signIn; _env = env;
+        _users = users;
+        _signIn = signIn;
+        _env = env;
+        _email = email;
     }
-
     [HttpGet]
     public IActionResult Register() => View();
 
@@ -23,7 +27,7 @@ public class AccountController : Controller
     public async Task<IActionResult> Register(RegisterVm model)
     {
         if (!ModelState.IsValid) return View(model);
-        
+
         var age = (int)((DateTime.UtcNow - model.BirthDate).TotalDays / 365.25);
         if (age < 18)
         {
@@ -39,9 +43,11 @@ public class AccountController : Controller
 
         var newUser = new User
         {
-            UserName = model.UserName, Email = model.Email, BirthDate = model.BirthDate
+            UserName = model.UserName,
+            Email = model.Email,
+            BirthDate = model.BirthDate
         };
-        
+
         if (model.Avatar != null && model.Avatar.Length > 0)
         {
             var dir = Path.Combine(_env.WebRootPath, "images", "avatars");
@@ -54,16 +60,28 @@ public class AccountController : Controller
         }
         else newUser.AvatarPath = "/images/avatars/default.png";
 
-        var signInResult = await _users.CreateAsync(newUser, model.Password);
-        if (signInResult.Succeeded)
+        var result = await _users.CreateAsync(newUser, model.Password);
+        if (result.Succeeded)
         {
             await _users.AddToRoleAsync(newUser, "user");
+            
+            var profileUrl = Url.Action("Profile", "Users", new { id = newUser.Id }, Request.Scheme);
+            var html = $"""
+                <h3>Добро пожаловать, {newUser.UserName}!</h3>
+                <p>Ваш логин: <b>{newUser.UserName}</b></p>
+                <p>Ссылка на профиль: <a href="{profileUrl}">{profileUrl}</a></p>
+                """;
+            await _email.SendAsync(newUser.Email!, "Добро пожаловать в MyChat", html);
+            
+
             await _signIn.SignInAsync(newUser, false);
             return RedirectToAction("Index", "Chat");
         }
-        foreach (var e in signInResult.Errors) ModelState.AddModelError("", e.Description);
+
+        foreach (var e in result.Errors) ModelState.AddModelError(string.Empty, e.Description);
         return View(model);
     }
+
 
     [HttpGet] public IActionResult Login() => View();
 
@@ -95,4 +113,8 @@ public class AccountController : Controller
         await _signIn.SignOutAsync();
         return RedirectToAction("Index", "Chat");
     }
+    
+    
+    
+    
 }

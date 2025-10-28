@@ -11,5 +11,13 @@
         <div>Дата рождения: @Model.BirthDate.ToString("dd.MM.yyyy")</div>
         <div>Сообщений отправлено: <b>@ViewBag.SentCount</b></div>
         <a asp-action="EditProfile" class="btn btn-sm btn-secondary mt-2">Редактировать</a>
+        <form asp-action="SendMyData" method="post">
+            <button class="btn btn-info mt-2">Отправить мои данные на Email</button>
+        </form>
+
+        @if (TempData["Ok"] != null)
+        {
+            <div class="alert alert-success">@TempData["Ok"]</div>
+        }
     </div>
 </div>
